@@ -146,10 +146,10 @@ def generate_sequence_table(reads):
 if __name__ == "__main__":
 	if len(sys.argv) < 3:
 		print("You need to give the input reads file as first arguments and the percentage as second argument and 'dna' or 'aa' as third argument")
-		sys.exit(0)
+		sys.exit()
 	if not os.path.exists(sys.argv[1]):
 		print("The file {} does not exist".format(sys.argv[1]))
-		sys.exit(0)
+		sys.exit()
 
 	reads = read_fasta(sys.argv[1])
 	
@@ -167,7 +167,7 @@ if __name__ == "__main__":
 
 	else:
 		print("You need to give third argument as either 'dna' or 'aa'")
-		sys.exit(0)
+		sys.exit()
 	
 	total_count = len(reads)
 

@@ -181,7 +181,8 @@ dendrogramMutation <- function(geno_matrix, TF_position, TFBS_position, hc, merg
     # print(merge_mutations_tf)
     merge_mutations_tfbs <- c()
     
-    # reconstruct the most likely genotypes (the genotypes that require the least mutations) for all inner nodes of the TFBS variant dendrogram based on the numbers of mutations (merge values) computed by the Sankoff algorithm
+    # reconstruct the most likely genotypes (the genotypes that require the least mutations) 
+    # for all iner nodes of the TFBS variant dendrogram based on the numbers of mutations (merge values) computed by the Sankoff algorithm
     for(i in nrow(merge_values_tfbs):1) {
         if(merge_values_tfbs[i,1] > merge_values_tfbs[i,2]) {
             merge_mutations_tfbs[i] <- second_pos_genotype[2]
@@ -320,8 +321,8 @@ countMutations <- function(geno_matrix, TF_position, TFBS_position, hc, merge_mu
 
 
 # find combinations between two positions in the aligned proteins
-# hardcoded as it was faster than thinking of a clever way to do it in R (R is not really my favorite language)
-# todo need to check this again, I think some combinations are missing
+# hardcoded as it was faster thanto write 
+
 combinations <- function(first_position_aa, second_position_aa){
     if ((length(first_position_aa) == 2) & (length(second_position_aa) == 2)){
         return(list(list(first_position_aa, second_position_aa)))
@@ -488,7 +489,7 @@ if (start_of_loop == 1 & slice == 0){
     end_of_loop = start_of_loop + slice
 }
 
-print("starting the loop")
+start_print("starting the loop")
 for(i in c(start_of_loop:end_of_loop)) {
 # for (i in c(1, 10, 530, 200)){
     
