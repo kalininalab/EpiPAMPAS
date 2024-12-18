@@ -139,7 +139,6 @@ def generate_sequence_table(reads):
 		line = [str(sample_id)]
 		line += [char for char in read]
 		line[-1] = line[-1] + "\n"
-		#pdb.set_trace()
 		output_table.write("\t".join(line))
 
 

@@ -150,6 +150,92 @@ hierarchicalClustering <- function(geno_matrix, method, first_position, second_p
     return(hc)
 }
 
+
+# algorithm counting the number of same direction mutations and opposite direction mutations in a dendrogram
+# look how TF variant changes with TFBS seen as constant, can be applied for constant TF and changing TFBS by exchanging TF and TFBS
+countMutations <- function(geno_matrix, TF_position, TFBS_position, hc, merge_mutations_tf, merge_mutations_tfbs) {
+  
+  # number of same direction mutations
+  sym_tf <- 0
+  
+  # number of opposite direction mutations
+  assym_tf <- 0
+  
+  # extract the genotypes of the TF and the TFBS variants
+  tf_snvs <- geno_matrix[,as.character(TF_position)]
+  tfbs_snvs <- geno_matrix[,as.character(TFBS_position)]
+  
+  # iterate through the dendrogram, starting at the root
+  for(i in nrow(hc$merge):1) {
+    
+    # get the left and right child nodes of the current node i
+    left <- hc$merge[i,1]
+    right <- hc$merge[i,2]
+    
+    # the left child node is an inner node
+    if(left > 0) {
+      # the genotype of the TF variant is different in the left child node than in the parent node, meaning a mutation takes place
+      if(merge_mutations_tf[i] != merge_mutations_tf[left]) {
+        # if the genotypes of the TF variant and the TFBS variant are the same after the mutation, count a same direction mutation, else count an opposite direction mutation
+        if(merge_mutations_tf[left] == merge_mutations_tfbs[left]) {
+          sym_tf = sym_tf + 1
+        } else {
+          assym_tf = assym_tf + 1
+        }
+      }
+    } 
+    # the left child node is a leaf
+    else {
+      # cannot count mutation direction if the resulting genotypes are unknown
+      if(is.na(tf_snvs[-left]) | is.na(tfbs_snvs[-left])) {
+        next
+      }
+      # the genotype of the TF variant is different in the left child node than in the parent node, meaning a mutation takes place
+      if(merge_mutations_tf[i] != tf_snvs[-left]) {
+        # if the genotypes of the TF variant and the TFBS variant are the same after the mutation, count a same direction mutation, else count an opposite direction mutation
+        if(tf_snvs[-left] == tfbs_snvs[-left]) {
+          sym_tf = sym_tf + 1
+        } else {
+          assym_tf = assym_tf + 1
+        }
+      }
+    }
+    
+    # the right child node is an inner node
+    if(right > 0) {
+      # the genotype of the TF variant is different in the right child node than in the parent node, meaning a mutation takes place
+      if(merge_mutations_tf[i] != merge_mutations_tf[right]) {
+        # if the genotypes of the TF variant and the TFBS variant are the same after the mutation, count a same direction mutation, else count an opposite direction mutation
+        if(merge_mutations_tf[right] == merge_mutations_tfbs[right]) {
+          sym_tf = sym_tf + 1
+        } else {
+          assym_tf = assym_tf + 1
+        }
+      }
+    } 
+    # the right child node is a leaf
+    else {
+      # cannot count mutation direction if the resulting genotypes are unknown
+      if(is.na(tf_snvs[-right]) | is.na(tfbs_snvs[-right])) {
+        next
+      }
+      # the genotype of the TF variant is different in the right child node than in the parent node, meaning a mutation takes place
+      if(merge_mutations_tf[i] != tf_snvs[-right]) {
+        # if the genotypes of the TF variant and the TFBS variant are the same after the mutation, count a same direction mutation, else count an opposite direction mutation
+        if(tf_snvs[-right] == tfbs_snvs[-right]) {
+          sym_tf = sym_tf + 1
+        } else {
+          assym_tf = assym_tf + 1
+        }
+      }
+    }
+  } 
+  
+  # return the counted numbers of same and opposite direction mutations
+  return(c(sym_tf, assym_tf))
+}
+
+
 dendrogramMutation <- function(geno_matrix, TF_position, TFBS_position, hc, merge_values_tf, merge_values_tfbs, binomial_tail) {
     
     first_pos_genotype <- unique(geno_matrix[,as.character(TF_position)])
@@ -204,14 +290,12 @@ dendrogramMutation <- function(geno_matrix, TF_position, TFBS_position, hc, merg
     # print(merge_mutations_tfbs)
     # look how tf changes with tfbs seen as constant
     mutation_count_tf <- countMutations(geno_matrix, TF_position, TFBS_position, hc, merge_mutations_tf, merge_mutations_tfbs)
-    # print("The mutation count of tf")
-    # print(mutation_count_tf)
-    # print(mutation_count_tf)
+    print("The mutation count of tf")
+    print(mutation_count_tf)
     # look how tfbs changes with tf seen as constant
     mutation_count_tfbs <- countMutations(geno_matrix, TFBS_position, TF_position, hc, merge_mutations_tfbs, merge_mutations_tf)
-    # print("The mutation count of tfbs")
-    # print(mutation_count_tfbs)
-    # print(mutation_count_tfbs)
+    print("The mutation count of tfbs")
+    print(mutation_count_tfbs)
     # apply right-tailed, two-tailed, or left-tailed binomial tests to the counted numbers of same and opposite direction mutations for the TF and the TFBS
     binom_tf <- NULL
     binom_tfbs <- NULL
@@ -233,90 +317,6 @@ dendrogramMutation <- function(geno_matrix, TF_position, TFBS_position, hc, merg
     
     
     return(c(pval_tf,pval_tfbs))
-}
-
-# algorithm counting the number of same direction mutations and opposite direction mutations in a dendrogram
-# look how TF variant changes with TFBS seen as constant, can be applied for constant TF and changing TFBS by exchanging TF and TFBS
-countMutations <- function(geno_matrix, TF_position, TFBS_position, hc, merge_mutations_tf, merge_mutations_tfbs) {
-    
-    # number of same direction mutations
-    sym_tf <- 0
-    
-    # number of opposite direction mutations
-    assym_tf <- 0
-    
-    # extract the genotypes of the TF and the TFBS variants
-    tf_snvs <- geno_matrix[,as.character(TF_position)]
-    tfbs_snvs <- geno_matrix[,as.character(TFBS_position)]
-    
-    # iterate through the dendrogram, starting at the root
-    for(i in nrow(hc$merge):1) {
-        
-        # get the left and right child nodes of the current node i
-        left <- hc$merge[i,1]
-        right <- hc$merge[i,2]
-        
-        # the left child node is an inner node
-        if(left > 0) {
-            # the genotype of the TF variant is different in the left child node than in the parent node, meaning a mutation takes place
-            if(merge_mutations_tf[i] != merge_mutations_tf[left]) {
-                # if the genotypes of the TF variant and the TFBS variant are the same after the mutation, count a same direction mutation, else count an opposite direction mutation
-                if(merge_mutations_tf[left] == merge_mutations_tfbs[left]) {
-                    sym_tf = sym_tf + 1
-                } else {
-                    assym_tf = assym_tf + 1
-                }
-            }
-        } 
-        # the left child node is a leaf
-        else {
-            # cannot count mutation direction if the resulting genotypes are unknown
-            if(is.na(tf_snvs[-left]) | is.na(tfbs_snvs[-left])) {
-                next
-            }
-            # the genotype of the TF variant is different in the left child node than in the parent node, meaning a mutation takes place
-            if(merge_mutations_tf[i] != tf_snvs[-left]) {
-                # if the genotypes of the TF variant and the TFBS variant are the same after the mutation, count a same direction mutation, else count an opposite direction mutation
-                if(tf_snvs[-left] == tfbs_snvs[-left]) {
-                    sym_tf = sym_tf + 1
-                } else {
-                    assym_tf = assym_tf + 1
-                }
-            }
-        }
-        
-        # the right child node is an inner node
-        if(right > 0) {
-            # the genotype of the TF variant is different in the right child node than in the parent node, meaning a mutation takes place
-            if(merge_mutations_tf[i] != merge_mutations_tf[right]) {
-                # if the genotypes of the TF variant and the TFBS variant are the same after the mutation, count a same direction mutation, else count an opposite direction mutation
-                if(merge_mutations_tf[right] == merge_mutations_tfbs[right]) {
-                    sym_tf = sym_tf + 1
-                } else {
-                    assym_tf = assym_tf + 1
-                }
-            }
-        } 
-        # the right child node is a leaf
-        else {
-            # cannot count mutation direction if the resulting genotypes are unknown
-            if(is.na(tf_snvs[-right]) | is.na(tfbs_snvs[-right])) {
-                next
-            }
-            # the genotype of the TF variant is different in the right child node than in the parent node, meaning a mutation takes place
-            if(merge_mutations_tf[i] != tf_snvs[-right]) {
-                # if the genotypes of the TF variant and the TFBS variant are the same after the mutation, count a same direction mutation, else count an opposite direction mutation
-                if(tf_snvs[-right] == tfbs_snvs[-right]) {
-                    sym_tf = sym_tf + 1
-                } else {
-                    assym_tf = assym_tf + 1
-                }
-            }
-        }
-    } 
-    
-    # return the counted numbers of same and opposite direction mutations
-    return(c(sym_tf, assym_tf))
 }
 
 
